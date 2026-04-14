@@ -21,15 +21,6 @@
 #include "hw/core/qdev-properties-system.h"
 #include "qom/object.h"
 
-// #define DEBUG_SCSI_TAPE
-
-#ifdef DEBUG_SCSI_TAPE
-#define DPRINTF(fmt, ...) \
-    do { fprintf(stderr, "scsi-tape: " fmt, ## __VA_ARGS__); } while (0)
-#else
-#define DPRINTF(fmt, ...) do {} while (0)
-#endif
-
 #define SCSI_MAX_INQUIRY_LEN    256
 
 #define TYPE_SCSI_TAPE "scsi-tape"
@@ -176,8 +167,6 @@ static int32_t scsi_tape_emulate_command(SCSIRequest *req, uint8_t *buf)
     int32_t len = 0;
     uint8_t command = buf[0];
 
-    DPRINTF("command: 0x%02x tag=0x%x\n", command, req->tag);
-
     if (req->cmd.xfer > 65536) {
         scsi_check_condition(r, SENSE_CODE(INVALID_FIELD));
         return 0;
@@ -190,7 +179,6 @@ static int32_t scsi_tape_emulate_command(SCSIRequest *req, uint8_t *buf)
 
     switch (command) {
     case INQUIRY:
-        DPRINTF("INQUIRY\n");
         len = scsi_tape_emulate_inquiry(req, outbuf);
         if (len < 0) {
             scsi_check_condition(r, SENSE_CODE(INVALID_FIELD));
@@ -212,7 +200,6 @@ static int32_t scsi_tape_emulate_command(SCSIRequest *req, uint8_t *buf)
         // 0x0: 0x70 = current errors, fixed format
         // 0x2: sense key (0x00 = NO SENSE)
         // 0x7: additional sense length
-        DPRINTF("REQUEST SENSE\n");
         {
             int sense_len = MIN(buf[4], 18);
             memset(outbuf, 0, sense_len);
@@ -306,8 +293,6 @@ static void scsi_tape_realize(SCSIDevice *dev, Error **errp)
     if (!s->version) {
         s->version = g_strdup(QEMU_HW_VERSION);
     }
-
-    DPRINTF("realize: tape device ready\n");
 }
 
 static Property scsi_tape_properties[] = {
